@@ -1,0 +1,27 @@
+[
+  {
+    "table": "devices",
+    "initData": [
+      {
+        "type": "sensor",
+        "name": "Temperature Sensor"
+      },
+      {
+        "type": "sensor",
+        "name": "Humidity Sensor"
+      },
+      {
+        "type": "actuator",
+        "name": "Light"
+      },
+      {
+        "type": "actuator",
+        "name": "Fan"
+      },
+      {
+        "type": "actuator",
+        "name": "Air Conditioner"
+      }
+    ]
+  }
+]

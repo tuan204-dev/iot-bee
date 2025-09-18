@@ -15,7 +15,6 @@ export class DeviceEntity {
   @Column({
     type: 'varchar',
     length: 100,
-    unique: true,
     nullable: false,
   })
   type: string;
