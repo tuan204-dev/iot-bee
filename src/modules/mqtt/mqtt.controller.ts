@@ -1,12 +1,16 @@
 import { Controller } from '@nestjs/common';
 import { Ctx, EventPattern, MqttContext, Payload } from '@nestjs/microservices';
 import { SensorDataService } from '../sensor-data/sensor-data.service';
+import { RealtimeGateway } from '../websocket/realtime.gateway';
 import type { ISensorDataPayload } from '../sensor-data/sensor-data.interface';
 import { isUndefined } from 'lodash';
 
 @Controller()
 export class MqttController {
-  constructor(private readonly sensorDataService: SensorDataService) {}
+  constructor(
+    private readonly sensorDataService: SensorDataService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {}
 
   // Subscribe to the 'realtime_data' topic
   @EventPattern('realtime_data')
@@ -34,6 +38,16 @@ export class MqttController {
         this.sensorDataService.saveHumidityData(data.humidity),
         this.sensorDataService.saveLightData(data.light),
       ]);
+
+      // Broadcast real-time data via WebSocket
+      this.realtimeGateway.broadcastSensorData(data);
+
+      // Also broadcast individual sensor values
+      this.realtimeGateway.broadcastTemperature(data.temp);
+      this.realtimeGateway.broadcastHumidity(data.humidity);
+      this.realtimeGateway.broadcastLight(data.light);
+
+      console.log('✅ Data saved and broadcasted successfully');
     } catch (e) {
       console.error('Error processing message:', e);
     }

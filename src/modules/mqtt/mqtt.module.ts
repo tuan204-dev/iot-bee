@@ -3,6 +3,7 @@ import { MqttService } from './mqtt.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MqttController } from './mqtt.controller';
 import { SensorDataModule } from '../sensor-data/sensor-data.module';
+import { WebSocketModule } from '../websocket/websocket.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SensorDataModule } from '../sensor-data/sensor-data.module';
       },
     ]),
     SensorDataModule,
+    WebSocketModule,
   ],
   controllers: [MqttController],
   providers: [MqttService],

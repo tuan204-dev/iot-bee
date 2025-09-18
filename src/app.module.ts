@@ -8,6 +8,7 @@ import { ActuatorModule } from './modules/actuator/actuator.module';
 import { ActionModule } from './modules/action/action.module';
 import { ActionHistoryModule } from './modules/action-history/action-history.module';
 import { MqttModule } from './modules/mqtt/mqtt.module';
+import { WebSocketModule } from './modules/websocket/websocket.module';
 import pgConfig from './config/db.conf';
 
 @Module({
@@ -31,6 +32,7 @@ import pgConfig from './config/db.conf';
       inject: [ConfigService],
     }),
     MqttModule, // Global MQTT module
+    WebSocketModule, // Global WebSocket module
     DeviceModule,
     SensorModule,
     SensorDataModule,
