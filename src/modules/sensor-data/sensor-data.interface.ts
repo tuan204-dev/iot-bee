@@ -3,3 +3,12 @@ export interface ISensorDataPayload {
   humidity: number;
   light: number;
 }
+
+export interface ISearchSensorDataParams {
+  type?: string;
+  unit?: string;
+  startDate?: string;
+  endDate?: string;
+  size?: number;
+  page?: number;
+}

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SensorDataEntity } from './sensor-data.entity';
+import { ISearchSensorDataParams } from './sensor-data.interface';
 
 @Injectable()
 export class SensorDataService {
@@ -9,39 +10,6 @@ export class SensorDataService {
     @InjectRepository(SensorDataEntity)
     private readonly sensorDataRepository: Repository<SensorDataEntity>,
   ) {}
-
-  async findAll(): Promise<SensorDataEntity[]> {
-    return this.sensorDataRepository.find({
-      relations: ['sensor'],
-      order: { timestamp: 'DESC' },
-    });
-  }
-
-  async findOne(id: number): Promise<SensorDataEntity | null> {
-    return this.sensorDataRepository.findOne({
-      where: { id },
-      relations: ['sensor'],
-    });
-  }
-
-  async findBySensorId(sensorId: number): Promise<SensorDataEntity[]> {
-    return this.sensorDataRepository.find({
-      where: { sensor_id: sensorId },
-      relations: ['sensor'],
-      order: { timestamp: 'DESC' },
-    });
-  }
-
-  async findLatestBySensorId(
-    sensorId: number,
-  ): Promise<SensorDataEntity | null> {
-    return this.sensorDataRepository.findOne({
-      where: { sensor_id: sensorId },
-      relations: ['sensor'],
-      order: { timestamp: 'DESC' },
-    });
-  }
-
   async saveTempData(data: number) {
     try {
       const sensorData = this.sensorDataRepository.create({
@@ -85,6 +53,29 @@ export class SensorDataService {
     } catch (e) {
       console.error('Error saving light data:', e);
       return null;
+    }
+  }
+
+  async findSensorData(params: ISearchSensorDataParams) {
+    try {
+      const { page, size, startDate, endDate, unit } = params ?? {};
+
+      const res = await this.sensorDataRepository
+        .createQueryBuilder('sensor_data')
+        .where({
+          ...(startDate && { timestamp: { $gte: startDate } }),
+          ...(endDate && { timestamp: { $lte: endDate } }),
+          ...(unit && { unit }),
+        })
+        .getManyAndCount();
+
+      return {
+        data: res[0],
+        total: res[1],
+      };
+    } catch (e) {
+      console.error('Error finding sensor data:', e);
+      return [];
     }
   }
 }
