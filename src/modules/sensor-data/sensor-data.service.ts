@@ -42,22 +42,49 @@ export class SensorDataService {
     });
   }
 
-  async create(
-    createSensorDataDto: Partial<SensorDataEntity>,
-  ): Promise<SensorDataEntity> {
-    const sensorData = this.sensorDataRepository.create(createSensorDataDto);
-    return this.sensorDataRepository.save(sensorData);
+  async saveTempData(data: number) {
+    try {
+      const sensorData = this.sensorDataRepository.create({
+        value: data,
+        unit: '°C',
+        sensor_id: 1,
+        timestamp: new Date(),
+      });
+
+      return this.sensorDataRepository.save(sensorData);
+    } catch (e) {
+      console.error('Error saving temperature data:', e);
+      return null;
+    }
   }
 
-  async update(
-    id: number,
-    updateSensorDataDto: Partial<SensorDataEntity>,
-  ): Promise<SensorDataEntity | null> {
-    await this.sensorDataRepository.update(id, updateSensorDataDto);
-    return this.findOne(id);
+  async saveHumidityData(data: number) {
+    try {
+      const sensorData = this.sensorDataRepository.create({
+        value: data,
+        unit: '%',
+        sensor_id: 1,
+        timestamp: new Date(),
+      });
+      return this.sensorDataRepository.save(sensorData);
+    } catch (e) {
+      console.error('Error saving humidity data:', e);
+      return null;
+    }
   }
 
-  async remove(id: number): Promise<void> {
-    await this.sensorDataRepository.delete(id);
+  async saveLightData(data: number) {
+    try {
+      const sensorData = this.sensorDataRepository.create({
+        value: data,
+        unit: 'lx',
+        sensor_id: 1,
+        timestamp: new Date(),
+      });
+      return this.sensorDataRepository.save(sensorData);
+    } catch (e) {
+      console.error('Error saving light data:', e);
+      return null;
+    }
   }
 }
