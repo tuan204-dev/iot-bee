@@ -23,6 +23,13 @@ export class ActionEntity {
   })
   name: string;
 
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: false,
+  })
+  state: string;
+
   // Relations
   @ManyToOne(() => DeviceEntity, (device) => device.actions)
   @JoinColumn({ name: 'device_id' })
