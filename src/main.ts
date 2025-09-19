@@ -10,9 +10,9 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.MQTT,
     options: {
-      url: 'mqtt://127.0.0.1:1883',
+      url: 'mqtt://127.0.0.1:32768',
       username: 'user',
-      password: '123456',
+      password: '123456789',
     },
   });
 
@@ -21,7 +21,7 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
 
   console.log('🚀 HTTP Server running on port 3000');
-  console.log('📡 MQTT Microservice connected to 127.0.0.1:1883');
+  console.log('📡 MQTT Microservice connected to 127.0.0.1:32768');
 }
 
 void bootstrap();

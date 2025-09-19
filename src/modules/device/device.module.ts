@@ -4,10 +4,12 @@ import { DeviceService } from './device.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DeviceEntity } from './device.entity';
 import { MqttModule } from '../mqtt/mqtt.module';
+import { ActionEntity } from '../action/action.entity';
+import { ActuatorEntity } from '../actuator/actuator.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DeviceEntity]),
+    TypeOrmModule.forFeature([DeviceEntity, ActionEntity, ActuatorEntity]),
     MqttModule, // Import shared MQTT module
   ],
   controllers: [DeviceController],

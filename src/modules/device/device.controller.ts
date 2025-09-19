@@ -1,6 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
-import { DeviceService } from './device.service';
+import { Body, Controller, Post } from '@nestjs/common';
 import { MqttService } from '../mqtt/mqtt.service';
+import { DeviceService } from './device.service';
+import { TriggerActionDto } from './dto/trigger-action.dto';
 
 @Controller('devices')
 export class DeviceController {
@@ -9,8 +10,8 @@ export class DeviceController {
     private readonly mqttService: MqttService,
   ) {}
 
-  @Get()
-  publish() {
-    return this.mqttService.publishMessage();
+  @Post('trigger')
+  async triggerAction(@Body() body: TriggerActionDto) {
+    return this.deviceService.triggerAction(body);
   }
 }

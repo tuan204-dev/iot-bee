@@ -21,7 +21,7 @@ export class RealtimeGateway
   @WebSocketServer()
   server: Server;
 
-  private connectedClients: Set<string> = new Set();
+  private readonly connectedClients: Set<string> = new Set();
 
   handleConnection(client: Socket) {
     this.connectedClients.add(client.id);
