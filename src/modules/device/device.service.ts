@@ -6,6 +6,7 @@ import { DeviceEntity } from './device.entity';
 import { TriggerActionDto } from './dto/trigger-action.dto';
 import { ActionEntity } from '../action/action.entity';
 import { ActuatorEntity } from '../actuator/actuator.entity';
+import { ActionHistoryEntity } from '../action-history/action-history.entity';
 
 @Injectable()
 export class DeviceService {
@@ -17,12 +18,9 @@ export class DeviceService {
     private readonly actionRepository: Repository<ActionEntity>,
     @InjectRepository(ActuatorEntity)
     private readonly actuatorRepository: Repository<ActuatorEntity>,
+    @InjectRepository(ActionHistoryEntity)
+    private readonly actionHistoryRepository: Repository<ActionHistoryEntity>,
   ) {}
-
-  // Test MQTT connection
-  testMqtt() {
-    return this.mqttService.publishMessage();
-  }
 
   async triggerAction(payload: TriggerActionDto) {
     try {
@@ -48,7 +46,31 @@ export class DeviceService {
         throw new Error('Actuator not found');
       }
 
-      await this.mqttService.triggerAction(action, actuator);
+      const actionHistory = this.actionHistoryRepository.create({
+        action_id: action.id,
+        actuator_id: actuator.id,
+        timestamp: new Date(),
+        status: 'pending',
+      });
+
+      const { id: actionHistoryId } =
+        await this.actionHistoryRepository.save(actionHistory);
+
+      await this.mqttService.triggerAction(action, actuator, actionHistoryId);
+
+      const { isSuccess } = await this.mqttService.waitForTopicMessage(
+        'ack',
+        10000,
+        actionHistoryId,
+      );
+
+      if (!isSuccess) {
+        throw new Error('Action not acknowledged');
+      }
+
+      await this.actionHistoryRepository.update(actionHistoryId, {
+        status: 'success',
+      });
 
       return { status: 'ok', message: 'Action triggered' };
     } catch (e) {

@@ -1,5 +1,5 @@
 export interface ISensorDataPayload {
-  temp: number;
+  temperature: number;
   humidity: number;
   light: number;
 }
