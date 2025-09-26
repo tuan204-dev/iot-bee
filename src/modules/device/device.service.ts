@@ -68,7 +68,7 @@ export class DeviceService {
         await this.actionHistoryRepository.update(actionHistoryId, {
           status: 'failed',
         });
-        throw new Error('Action not acknowledged');
+        return { status: 'error', message: 'Action failed' };
       }
 
       await this.actionHistoryRepository.update(actionHistoryId, {

@@ -6,11 +6,19 @@ async function bootstrap() {
   // Tạo HTTP app
   const app = await NestFactory.create(AppModule);
 
+  // Enable CORS để fix strict-origin-when-cross-origin
+  app.enableCors({
+    origin: true, // Cho phép tất cả origins, hoặc chỉ định cụ thể: ['http://localhost:3000', 'http://127.0.0.1:3000']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true, // Cho phép gửi cookies/credentials
+  });
+
   // Thêm MQTT microservice
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.MQTT,
     options: {
-      url: 'mqtt://192.168.0.107:1883',
+      url: 'mqtt://172.20.10.4:1883',
       username: 'user',
       password: '123456',
     },
