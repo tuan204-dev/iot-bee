@@ -46,7 +46,7 @@ export class SensorDataService {
       const sensorData = this.sensorDataRepository.create({
         value: data,
         unit: 'lx',
-        sensor_id: 1,
+        sensor_id: 2,
         timestamp: new Date(),
       });
       return this.sensorDataRepository.save(sensorData);
@@ -58,24 +58,82 @@ export class SensorDataService {
 
   async findSensorData(params: ISearchSensorDataParams) {
     try {
-      const { page, size, startDate, endDate, unit } = params ?? {};
+      const {
+        page = 1,
+        size = 10,
+        startDate,
+        endDate,
+        unit,
+        startValue,
+        endValue,
+        sensorIds = [],
+      } = params ?? {};
 
-      const res = await this.sensorDataRepository
-        .createQueryBuilder('sensor_data')
-        .where({
-          ...(startDate && { timestamp: { $gte: startDate } }),
-          ...(endDate && { timestamp: { $lte: endDate } }),
-          ...(unit && { unit }),
-        })
-        .getManyAndCount();
+      const queryBuilder = this.sensorDataRepository
+        .createQueryBuilder('sd')
+        .leftJoinAndSelect('sd.sensor', 'sensor')
+        .orderBy('sd.timestamp', 'DESC');
+
+      // Filter by sensor IDs
+      if (sensorIds.length > 0) {
+        queryBuilder.andWhere('sd.sensor_id IN (:...sensorIds)', { sensorIds });
+      }
+
+      // Filter by unit
+      if (unit) {
+        queryBuilder.andWhere('sd.unit = :unit', { unit });
+      }
+
+      // Filter by date range
+      if (startDate) {
+        queryBuilder.andWhere('sd.timestamp >= :startDate', {
+          startDate: new Date(startDate),
+        });
+      }
+
+      if (endDate) {
+        queryBuilder.andWhere('sd.timestamp <= :endDate', {
+          endDate: new Date(endDate),
+        });
+      }
+
+      // Filter by value range
+      if (startValue !== undefined) {
+        queryBuilder.andWhere('sd.value >= :startValue', { startValue });
+      }
+
+      if (endValue !== undefined) {
+        queryBuilder.andWhere('sd.value <= :endValue', { endValue });
+      }
+
+      // Add pagination
+      const skip = (page - 1) * size;
+      queryBuilder.skip(skip).take(size);
+
+      // Get total count for pagination info
+      const totalCount = await queryBuilder.getCount();
+      const data = await queryBuilder.getMany();
 
       return {
-        data: res[0],
-        total: res[1],
+        data,
+        pagination: {
+          page,
+          size,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / size),
+        },
       };
     } catch (e) {
       console.error('Error finding sensor data:', e);
-      return [];
+      return {
+        data: [],
+        pagination: {
+          page: 1,
+          size: 10,
+          total: 0,
+          totalPages: 0,
+        },
+      };
     }
   }
 }

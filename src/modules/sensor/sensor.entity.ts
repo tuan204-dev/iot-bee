@@ -1,5 +1,6 @@
 import { Column, Entity, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { DeviceEntity } from '../device/device.entity';
+import { SensorDataEntity } from '../sensor-data/sensor-data.entity';
 
 @Entity('sensors')
 export class SensorEntity {
@@ -28,6 +29,6 @@ export class SensorEntity {
   @JoinColumn({ name: 'device_id' })
   device: DeviceEntity;
 
-  @OneToMany('SensorDataEntity', 'sensor')
-  sensorData: any[];
+  @OneToMany(() => SensorDataEntity, (sensorData) => sensorData.sensor)
+  sensorData: SensorDataEntity[];
 }

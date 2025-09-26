@@ -5,10 +5,12 @@ export interface ISensorDataPayload {
 }
 
 export interface ISearchSensorDataParams {
-  type?: string;
+  sensorIds?: string[]; // sensor ids
   unit?: string;
-  startDate?: string;
-  endDate?: string;
+  startDate?: number; // timestamp
+  endDate?: number; // timestamp
+  startValue?: number;
+  endValue?: number;
   size?: number;
   page?: number;
 }

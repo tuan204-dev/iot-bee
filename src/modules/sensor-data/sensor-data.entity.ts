@@ -1,4 +1,5 @@
 import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
+import { SensorEntity } from '../sensor/sensor.entity';
 
 @Entity('sensor_data')
 export class SensorDataEntity {
@@ -35,7 +36,7 @@ export class SensorDataEntity {
   timestamp: Date;
 
   // Relations
-  @ManyToOne('SensorEntity', 'sensorData')
+  @ManyToOne(() => SensorEntity, (sensor) => sensor.sensorData)
   @JoinColumn({ name: 'sensor_id' })
-  sensor: any;
+  sensor: SensorEntity;
 }
