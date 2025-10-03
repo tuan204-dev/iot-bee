@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ActionHistoryService } from './action-history.service';
 import { ActionHistoryEntity } from './action-history.entity';
+import { SearchActionHistoryDto } from './dto/search-action-history.dto';
 
 @Controller('action-histories')
 export class ActionHistoryController {
@@ -56,5 +57,10 @@ export class ActionHistoryController {
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<void> {
     return this.actionHistoryService.remove(+id);
+  }
+
+  @Post('/search')
+  async search(@Body() body: SearchActionHistoryDto) {
+    return this.actionHistoryService.search(body);
   }
 }
