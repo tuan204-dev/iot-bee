@@ -12,7 +12,7 @@ export class ActionService {
 
   async findAll(): Promise<ActionEntity[]> {
     return this.actionRepository.find({
-      relations: ['device', 'actionHistories'],
+      relations: ['device'],
     });
   }
 
