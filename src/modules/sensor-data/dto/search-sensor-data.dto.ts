@@ -11,7 +11,7 @@ export class SearchSensorDataDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  sensorIds?: string[];
+  sensorIds?: number[];
 
   @IsOptional()
   @IsString()
@@ -32,6 +32,14 @@ export class SearchSensorDataDto {
   @IsOptional()
   @IsNumber()
   endValue?: number;
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string = 'timestamp';
+
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'ASC' | 'DESC' = 'DESC';
 
   @IsOptional()
   @IsNumber()

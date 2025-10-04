@@ -12,7 +12,7 @@ export class SensorService {
 
   async findAll(): Promise<SensorEntity[]> {
     return this.sensorRepository.find({
-      relations: ['device', 'sensorData'],
+      relations: ['device'],
     });
   }
 
