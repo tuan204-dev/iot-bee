@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DeviceController } from './device.controller';
 import { DeviceService } from './device.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -16,9 +16,10 @@ import { ActionHistoryEntity } from '../action-history/action-history.entity';
       ActuatorEntity,
       ActionHistoryEntity,
     ]),
-    MqttModule, // Import shared MQTT module
+    forwardRef(() => MqttModule), // Use forwardRef to resolve circular dependency
   ],
   controllers: [DeviceController],
   providers: [DeviceService],
+  exports: [DeviceService], // Export DeviceService so it can be used by other modules
 })
 export class DeviceModule {}

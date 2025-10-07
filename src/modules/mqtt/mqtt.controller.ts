@@ -1,10 +1,12 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject, forwardRef } from '@nestjs/common';
 import { Ctx, EventPattern, MqttContext, Payload } from '@nestjs/microservices';
 import { isUndefined } from 'lodash';
 import type { ISensorDataPayload } from '../sensor-data/sensor-data.interface';
 import { SensorDataService } from '../sensor-data/sensor-data.service';
 import { RealtimeGateway } from '../websocket/realtime.gateway';
 import { MqttService } from './mqtt.service';
+import { type IDeviceStatusPayload } from './mqtt.interface';
+import { DeviceService } from '../device/device.service';
 
 @Controller()
 export class MqttController {
@@ -12,6 +14,8 @@ export class MqttController {
     private readonly sensorDataService: SensorDataService,
     private readonly realtimeGateway: RealtimeGateway,
     private readonly mqttService: MqttService,
+    @Inject(forwardRef(() => DeviceService))
+    private readonly deviceService: DeviceService,
   ) {}
 
   // Subscribe to the 'realtime_data' topic
@@ -52,6 +56,18 @@ export class MqttController {
       console.log('✅ Data saved and broadcasted successfully');
     } catch (e) {
       console.error('Error processing message:', e);
+    }
+  }
+
+  // Subscribe to the 'device_status' topic
+  @EventPattern('device_status')
+  async handleListenDeviceStatus(@Payload() data: IDeviceStatusPayload) {
+    try {
+      if (data.isConnected) {
+        await this.deviceService.handleDeviceReconnect();
+      }
+    } catch (e) {
+      console.error('Error processing device status message:', e);
     }
   }
 

@@ -91,7 +91,7 @@ export class ActionHistoryService {
 
     // Search by action name (queryName)
     if (body.queryName) {
-      query.andWhere('action.name LIKE :queryName', {
+      query.andWhere('action.name ILIKE :queryName', {
         queryName: `%${body.queryName}%`,
       });
     }

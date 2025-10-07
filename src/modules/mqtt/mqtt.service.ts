@@ -41,10 +41,18 @@ export class MqttService implements OnModuleInit {
     );
   }
 
+  async sendPing(messageId: number | string) {
+    await firstValueFrom(
+      this.client.emit('ping', {
+        messageId,
+      }),
+    );
+  }
+
   async waitForTopicMessage(
     topic: string,
     timeoutMs: number = 5000,
-    messageId: number,
+    messageId: number | string,
   ): Promise<IAckPayload> {
     try {
       console.log(
