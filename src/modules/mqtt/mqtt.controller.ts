@@ -1,5 +1,6 @@
 import { Controller, Inject, forwardRef } from '@nestjs/common';
 import { Ctx, EventPattern, MqttContext, Payload } from '@nestjs/microservices';
+import { ApiTags } from '@nestjs/swagger';
 import { isUndefined } from 'lodash';
 import type { ISensorDataPayload } from '../sensor-data/sensor-data.interface';
 import { SensorDataService } from '../sensor-data/sensor-data.service';
@@ -8,6 +9,7 @@ import { MqttService } from './mqtt.service';
 import { type IDeviceStatusPayload } from './mqtt.interface';
 import { DeviceService } from '../device/device.service';
 
+@ApiTags('mqtt')
 @Controller()
 export class MqttController {
   constructor(

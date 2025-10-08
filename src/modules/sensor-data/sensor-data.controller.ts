@@ -1,18 +1,22 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { SearchSensorDataDto } from './dto/search-sensor-data.dto';
 import { SensorDataService } from './sensor-data.service';
 
+@ApiTags('sensor-data')
 @Controller('sensor-data')
 export class SensorDataController {
   constructor(private readonly sensorDataService: SensorDataService) {}
 
   @Post('search')
+  @ApiOperation({ summary: 'Search sensor data with filters' })
   async searchSensorData(@Body() body: SearchSensorDataDto) {
     return this.sensorDataService.findSensorData(body);
   }
 
   @Post('/download-csv')
+  @ApiOperation({ summary: 'Download sensor data as CSV file' })
   async downloadCsv(@Res() res: Response, @Body() body: SearchSensorDataDto) {
     const result = await this.sensorDataService.downloadCsv(body);
 

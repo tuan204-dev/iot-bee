@@ -13,7 +13,7 @@ import { DeviceModule } from '../device/device.module';
         name: 'MQTT_SERVICE',
         transport: Transport.MQTT,
         options: {
-          url: process.env.MQTT_BROKER,
+          url: 'mqtt://192.168.0.107:1883',
           username: 'user',
           password: '123456',
           subscriptions: [
