@@ -6,7 +6,9 @@ import {
   Param,
   Put,
   Delete,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ActionHistoryService } from './action-history.service';
 import { ActionHistoryEntity } from './action-history.entity';
 import { SearchActionHistoryDto } from './dto/search-action-history.dto';
@@ -37,6 +39,53 @@ export class ActionHistoryController {
     @Param('actuatorId') actuatorId: string,
   ): Promise<ActionHistoryEntity[]> {
     return this.actionHistoryService.findByActuatorId(+actuatorId);
+  }
+
+  @Get('download-csv')
+  async downloadCsv(@Res() res: Response) {
+    const result = await this.actionHistoryService.downloadCsv();
+
+    if (!result.success || !result.data) {
+      return res.status(400).json({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    // Set headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.data.filename}"`,
+    );
+    res.setHeader('Content-Length', Buffer.byteLength(result.data.content));
+
+    return res.send(result.data.content);
+  }
+
+  @Post('download-csv')
+  async downloadCsvWithParams(
+    @Res() res: Response,
+    @Body() params: SearchActionHistoryDto,
+  ) {
+    const result = await this.actionHistoryService.downloadCsv(params);
+
+    if (!result.success || !result.data) {
+      return res.status(400).json({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    // Set headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.data.filename}"`,
+    );
+    res.setHeader('Content-Length', Buffer.byteLength(result.data.content));
+
+    return res.send(result.data.content);
   }
 
   @Post()

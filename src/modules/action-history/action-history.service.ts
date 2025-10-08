@@ -140,6 +140,134 @@ export class ActionHistoryService {
     };
   }
 
+  async downloadCsv(params?: SearchActionHistoryDto) {
+    try {
+      const queryBuilder = this.actionHistoryRepository
+        .createQueryBuilder('actionHistory')
+        .leftJoinAndSelect('actionHistory.action', 'action')
+        .leftJoinAndSelect('actionHistory.actuator', 'actuator');
+
+      // Apply filters if params are provided
+      if (params) {
+        // Filter by actuator IDs
+        if (params.actuatorIds && params.actuatorIds.length > 0) {
+          queryBuilder.andWhere(
+            'actionHistory.actuator_id IN (:...actuatorIds)',
+            {
+              actuatorIds: params.actuatorIds,
+            },
+          );
+        }
+
+        // Filter by action IDs
+        if (params.actionIds && params.actionIds.length > 0) {
+          queryBuilder.andWhere('actionHistory.action_id IN (:...actionIds)', {
+            actionIds: params.actionIds,
+          });
+        }
+
+        // Filter by status
+        if (params.status) {
+          queryBuilder.andWhere('actionHistory.status = :status', {
+            status: params.status,
+          });
+        }
+
+        // Search by action name (queryName)
+        if (params.queryName) {
+          queryBuilder.andWhere('action.name ILIKE :queryName', {
+            queryName: `%${params.queryName}%`,
+          });
+        }
+
+        // Filter by date range
+        if (params.startDate) {
+          const startDate = new Date(params.startDate);
+          queryBuilder.andWhere('actionHistory.timestamp >= :startDate', {
+            startDate,
+          });
+        }
+
+        if (params.endDate) {
+          const endDate = new Date(params.endDate);
+          queryBuilder.andWhere('actionHistory.timestamp <= :endDate', {
+            endDate,
+          });
+        }
+
+        // Add sorting
+        const sortBy = params.sortBy || 'timestamp';
+        const sortOrder = params.sortOrder || 'DESC';
+        const sortColumn = this.getSortColumn(sortBy);
+        queryBuilder.orderBy(sortColumn, sortOrder);
+      } else {
+        // Default ordering if no params
+        queryBuilder.orderBy('actionHistory.timestamp', 'DESC');
+      }
+
+      // Get all data without pagination
+      const actionHistoryData = await queryBuilder.getMany();
+
+      if (!actionHistoryData || actionHistoryData.length === 0) {
+        return {
+          success: false,
+          message: 'No data found',
+          data: null,
+        };
+      }
+
+      // CSV headers
+      const headers = [
+        'ID',
+        'Action ID',
+        'Action Name',
+        'Action State',
+        'Actuator ID',
+        'Actuator Name',
+        'Status',
+        'Timestamp',
+      ];
+
+      // Convert data to CSV format
+      const csvRows: string[] = [];
+      csvRows.push(headers.join(','));
+
+      actionHistoryData.forEach((data) => {
+        const row = [
+          data.id,
+          data.action_id,
+          `"${(data.action?.name || 'Unknown').replace(/"/g, '""')}"`,
+          `"${(data.action?.state || 'Unknown').replace(/"/g, '""')}"`,
+          data.actuator_id,
+          `"${(data.actuator?.name || 'Unknown').replace(/"/g, '""')}"`,
+          `"${data.status.replace(/"/g, '""')}"`,
+          data.timestamp.toISOString(),
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      const csvContent = csvRows.join('\n');
+
+      return {
+        success: true,
+        message: 'CSV data generated successfully',
+        data: {
+          content: csvContent,
+          filename: `action_history_${new Date().toISOString().split('T')[0]}.csv`,
+          contentType: 'text/csv',
+          totalRecords: actionHistoryData.length,
+        },
+      };
+    } catch (e) {
+      console.error('Error generating CSV:', e);
+      return {
+        success: false,
+        message: 'Error generating CSV file',
+        data: null,
+      };
+    }
+  }
+
   private getSortColumn(sortBy: string): string {
     const sortMapping: { [key: string]: string } = {
       timestamp: 'actionHistory.timestamp',
