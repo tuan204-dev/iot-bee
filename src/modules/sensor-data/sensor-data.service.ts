@@ -271,4 +271,147 @@ export class SensorDataService {
       };
     }
   }
+
+  private static readonly samplingInterval = 2; //second
+
+  //   duration is second
+  async getRecentSensorData() {
+    try {
+      // Fixed to 5 minutes (300 seconds)
+      const fixedDuration = 300; // 5 minutes in seconds
+      const now = new Date();
+      const startTime = new Date(now.getTime() - fixedDuration * 1000);
+
+      // Query to get all data in the last 5 minutes
+      const recentData = await this.sensorDataRepository
+        .createQueryBuilder('sd')
+        .leftJoinAndSelect('sd.sensor', 'sensor')
+        .where('sd.timestamp >= :startTime', { startTime })
+        .andWhere('sd.timestamp <= :endTime', { endTime: now })
+        .orderBy('sd.timestamp', 'ASC')
+        .getMany();
+
+      // Calculate number of intervals for 5 minutes
+      const intervalCount = Math.ceil(
+        fixedDuration / SensorDataService.samplingInterval,
+      );
+
+      // Generate time slots based on sampling interval
+      const generateTimeSlots = () => {
+        const slots: Date[] = [];
+        for (let i = intervalCount - 1; i >= 0; i--) {
+          const slotTime = new Date(
+            now.getTime() - i * SensorDataService.samplingInterval * 1000,
+          );
+          slots.push(slotTime);
+        }
+        return slots;
+      };
+
+      const timeSlots = generateTimeSlots();
+
+      // Group data by sensor type and time intervals
+      const intervalData: Record<
+        string,
+        Record<string, { values: number[]; count: number }>
+      > = {
+        temperature: {},
+        humidity: {},
+        light: {},
+      };
+
+      // Initialize all time slots for each sensor type
+      ['temperature', 'humidity', 'light'].forEach((sensorType) => {
+        timeSlots.forEach((slotTime) => {
+          const slotKey = slotTime.toISOString();
+          intervalData[sensorType][slotKey] = { values: [], count: 0 };
+        });
+      });
+
+      // Group data by time interval and sensor type
+      recentData.forEach((data: SensorDataEntity) => {
+        const dataTime = new Date(data.timestamp);
+
+        // Find the closest time slot for this data point
+        let closestSlot = timeSlots[0];
+        let minDiff = Math.abs(dataTime.getTime() - timeSlots[0].getTime());
+
+        timeSlots.forEach((slot) => {
+          const diff = Math.abs(dataTime.getTime() - slot.getTime());
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestSlot = slot;
+          }
+        });
+
+        // Only include if within half of sampling interval
+        const maxDiff = (SensorDataService.samplingInterval * 1000) / 2;
+        if (minDiff <= maxDiff) {
+          const slotKey = closestSlot.toISOString();
+
+          let sensorType = '';
+          if (data.unit === '°C') {
+            sensorType = 'temperature';
+          } else if (data.unit === '%') {
+            sensorType = 'humidity';
+          } else if (data.unit === 'lx') {
+            sensorType = 'light';
+          }
+
+          if (sensorType && intervalData[sensorType][slotKey]) {
+            intervalData[sensorType][slotKey].values.push(data.value);
+            intervalData[sensorType][slotKey].count++;
+          }
+        }
+      });
+
+      // Calculate averages and format result
+      const result: Record<string, any[]> = {
+        temperature: [],
+        humidity: [],
+        light: [],
+      };
+
+      Object.keys(intervalData).forEach((sensorType) => {
+        timeSlots.forEach((slotTime) => {
+          const slotKey = slotTime.toISOString();
+          const slotData = intervalData[sensorType][slotKey];
+
+          // Calculate average or return 0 if no data
+          const average =
+            slotData.values.length > 0
+              ? slotData.values.reduce((sum, val) => sum + val, 0) /
+                slotData.values.length
+              : 0; // Return 0 if no data
+
+          result[sensorType].push({
+            timestamp: slotTime.toISOString(),
+            value: Math.round(average * 100) / 100, // Round to 2 decimal places
+          });
+        });
+      });
+
+      return {
+        success: true,
+        data: result,
+        message: 'Sensor data retrieved successfully',
+        duration_seconds: fixedDuration,
+        sampling_interval_seconds: SensorDataService.samplingInterval,
+        total_intervals: intervalCount,
+        retrieved_at: now.toISOString(),
+      };
+    } catch (e) {
+      console.error('Error fetching recent sensor data:', e);
+      return {
+        success: false,
+        data: {
+          temperature: [],
+          humidity: [],
+          light: [],
+        },
+        message: 'Error fetching recent sensor data',
+        error: e instanceof Error ? e.message : 'Unknown error',
+      };
+    }
+  }
 }

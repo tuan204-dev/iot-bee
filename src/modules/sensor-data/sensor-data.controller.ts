@@ -1,6 +1,6 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { SearchSensorDataDto } from './dto/search-sensor-data.dto';
 import { SensorDataService } from './sensor-data.service';
 
@@ -36,5 +36,11 @@ export class SensorDataController {
     res.setHeader('Content-Length', Buffer.byteLength(result.data.content));
 
     return res.send(result.data.content);
+  }
+
+  @Get('recent')
+  @ApiOperation({ summary: 'Get recent sensor data with specified duration' })
+  async getRecentSensorData() {
+    return this.sensorDataService.getRecentSensorData();
   }
 }

@@ -35,7 +35,7 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.MQTT,
     options: {
-      url: 'mqtt://192.168.0.107:1883',
+      url: 'mqtt://localhost:1883',
       username: 'user',
       password: '123456',
     },
