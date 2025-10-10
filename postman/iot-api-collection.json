@@ -1,0 +1,276 @@
+{
+  "info": {
+    "name": "IoT Backend API Collection",
+    "description": "Collection of REST APIs for IoT Backend System",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Actions",
+      "item": [
+        {
+          "name": "Get All Actions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/actions",
+              "host": ["{{baseUrl}}"],
+              "path": ["actions"]
+            },
+            "description": "Get all available actions"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Devices",
+      "item": [
+        {
+          "name": "Trigger Action",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actionId\": \"action123\",\n  \"actuatorId\": \"actuator456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/devices/trigger",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "trigger"]
+            },
+            "description": "Trigger an action on a specific device"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Last Device Actions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices/last-actions",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "last-actions"]
+            },
+            "description": "Get last actions for all devices"
+          },
+          "response": []
+        },
+        {
+          "name": "Ping ESP Device",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/devices/ping",
+              "host": ["{{baseUrl}}"],
+              "path": ["devices", "ping"]
+            },
+            "description": "Ping ESP device to check connectivity"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sensors",
+      "item": [
+        {
+          "name": "Get All Sensors",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sensors",
+              "host": ["{{baseUrl}}"],
+              "path": ["sensors"]
+            },
+            "description": "Get all available sensors"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sensor Data",
+      "item": [
+        {
+          "name": "Search Sensor Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sensorIds\": [\"1\", \"2\", \"3\"],\n  \"unit\": \"celsius\",\n  \"startDate\": 1609459200000,\n  \"endDate\": 1609545600000,\n  \"startValue\": 20,\n  \"endValue\": 30,\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\",\n  \"size\": 10,\n  \"page\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sensor-data/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["sensor-data", "search"]
+            },
+            "description": "Search sensor data with various filters including date range, value range, and pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Download Sensor Data CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sensorIds\": [\"1\", \"2\"],\n  \"startDate\": 1609459200000,\n  \"endDate\": 1609545600000,\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sensor-data/download-csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["sensor-data", "download-csv"]
+            },
+            "description": "Download filtered sensor data as CSV file"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recent Sensor Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sensor-data/recent",
+              "host": ["{{baseUrl}}"],
+              "path": ["sensor-data", "recent"]
+            },
+            "description": "Get recent sensor data with specified duration"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Action History",
+      "item": [
+        {
+          "name": "Search Action History",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actuatorIds\": [\"actuator1\", \"actuator2\"],\n  \"actionIds\": [\"action1\", \"action2\"],\n  \"status\": \"success\",\n  \"queryName\": \"turn on\",\n  \"startDate\": 1609459200000,\n  \"endDate\": 1609545600000,\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\",\n  \"size\": 10,\n  \"page\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/action-histories/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["action-histories", "search"]
+            },
+            "description": "Search action histories with filters including actuator IDs, action IDs, status, and date range"
+          },
+          "response": []
+        },
+        {
+          "name": "Download Action History CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actuatorIds\": [\"actuator1\"],\n  \"status\": \"success\",\n  \"startDate\": 1609459200000,\n  \"endDate\": 1609545600000,\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/action-histories/download-csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["action-histories", "download-csv"]
+            },
+            "description": "Download filtered action history as CSV file"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Actuators",
+      "item": [
+        {
+          "name": "Get All Actuators",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/actuators",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuators"]
+            },
+            "description": "Get all available actuators"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

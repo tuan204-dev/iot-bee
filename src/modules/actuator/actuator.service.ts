@@ -12,7 +12,7 @@ export class ActuatorService {
 
   async findAll(): Promise<ActuatorEntity[]> {
     return this.actuatorRepository.find({
-      relations: ['device', 'actionHistories'],
+      relations: ['device'],
     });
   }
 
