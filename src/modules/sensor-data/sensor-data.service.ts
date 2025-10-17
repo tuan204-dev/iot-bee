@@ -61,15 +61,8 @@ export class SensorDataService {
       const {
         page = 1,
         size = 10,
-        startDate,
-        endDate,
-        date,
-        unit,
-        startValue,
-        endValue,
-        value,
-        query,
-        sensorIds = [],
+        searchField,
+        searchValue,
         sortBy = 'timestamp',
         sortOrder = 'DESC',
       } = params ?? {};
@@ -78,81 +71,99 @@ export class SensorDataService {
         .createQueryBuilder('sd')
         .leftJoinAndSelect('sd.sensor', 'sensor');
 
-      // Filter by sensor IDs
-      if (sensorIds && sensorIds.length > 0) {
-        queryBuilder.andWhere('sd.sensor_id IN (:...sensorIds)', { sensorIds });
-      }
+      // Apply search logic based on searchField and searchValue
+      if (searchValue && searchValue.trim() !== '') {
+        switch (searchField) {
+          case 'all':
+            // Search across all fields intelligently (include smart time search)
+            // Check if searchValue matches Vietnamese date format
+            if (this.isVietnameseDateFormat(searchValue)) {
+              // If it's a valid date format, search in time + other fields
+              const subQuery = this.sensorDataRepository
+                .createQueryBuilder('sd_sub')
+                .select('sd_sub.id');
 
-      // Filter by unit
-      if (unit) {
-        queryBuilder.andWhere('sd.unit = :unit', { unit });
-      }
+              this.applyTimeSearch(subQuery, searchValue);
 
-      // General search query
-      if (query) {
-        // Check if query is a date format (YYYY-MM-DD HH:mm:ss)
-        const datePattern = /^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/;
-        if (datePattern.test(query)) {
-          // Convert to date and search by timestamp
-          const queryDate = new Date(query);
-          if (!isNaN(queryDate.getTime())) {
-            // Search for records within the same minute
-            const startOfMinute = new Date(queryDate);
-            startOfMinute.setSeconds(0, 0);
-            const endOfMinute = new Date(queryDate);
-            endOfMinute.setSeconds(59, 999);
+              queryBuilder.andWhere(
+                '(CAST(sd.sensor_id AS TEXT) ILIKE :searchValue OR ' +
+                  'sensor.name ILIKE :searchValue OR ' +
+                  'CAST(sd.value AS TEXT) ILIKE :searchValue OR ' +
+                  'sd.unit ILIKE :searchValue OR ' +
+                  `sd.id IN (${subQuery.getQuery()}))`,
+                {
+                  searchValue: `%${searchValue}%`,
+                  ...subQuery.getParameters(),
+                },
+              );
+            } else {
+              // Regular search without time
+              queryBuilder.andWhere(
+                '(CAST(sd.sensor_id AS TEXT) ILIKE :searchValue OR ' +
+                  'sensor.name ILIKE :searchValue OR ' +
+                  'CAST(sd.value AS TEXT) ILIKE :searchValue OR ' +
+                  'sd.unit ILIKE :searchValue)',
+                { searchValue: `%${searchValue}%` },
+              );
+            }
+            break;
 
-            queryBuilder.andWhere(
-              'sd.timestamp >= :startOfMinute AND sd.timestamp <= :endOfMinute',
-              {
-                startOfMinute,
-                endOfMinute,
-              },
-            );
+          case 'id': {
+            // Search by sensor ID
+            const numericId = Number.parseInt(searchValue, 10);
+            if (!Number.isNaN(numericId)) {
+              queryBuilder.andWhere('sd.sensor_id = :sensorId', {
+                sensorId: numericId,
+              });
+            }
+            break;
           }
-        } else {
-          // Regular text search
-          queryBuilder.andWhere(
-            '(sensor.name ILIKE :query OR sd.unit ILIKE :query OR CAST(sd.value AS TEXT) ILIKE :query)',
-            { query: `%${query}%` },
-          );
-        }
-      }
 
-      // Filter by specific date (takes precedence over date range)
-      if (date) {
-        const specificDate = new Date(date);
-        const startOfDay = new Date(specificDate.setHours(0, 0, 0, 0));
-        const endOfDay = new Date(specificDate.setHours(23, 59, 59, 999));
+          case 'name':
+            // Search by sensor name
+            queryBuilder.andWhere('sensor.name ILIKE :name', {
+              name: `%${searchValue}%`,
+            });
+            break;
 
-        queryBuilder.andWhere('sd.timestamp >= :startOfDay', { startOfDay });
-        queryBuilder.andWhere('sd.timestamp <= :endOfDay', { endOfDay });
-      } else {
-        // Filter by date range (only if specific date is not provided)
-        if (startDate) {
-          queryBuilder.andWhere('sd.timestamp >= :startDate', {
-            startDate: new Date(startDate),
-          });
-        }
+          case 'temp': {
+            // Search by temperature value (°C)
+            queryBuilder.andWhere('sd.unit = :tempUnit', { tempUnit: '°C' });
+            const tempValue = Number.parseFloat(searchValue);
+            if (!Number.isNaN(tempValue)) {
+              queryBuilder.andWhere('sd.value = :tempValue', { tempValue });
+            }
+            break;
+          }
 
-        if (endDate) {
-          queryBuilder.andWhere('sd.timestamp <= :endDate', {
-            endDate: new Date(endDate),
-          });
-        }
-      }
+          case 'humidity': {
+            // Search by humidity value (%)
+            queryBuilder.andWhere('sd.unit = :humidityUnit', {
+              humidityUnit: '%',
+            });
+            const humidityValue = Number.parseFloat(searchValue);
+            if (!Number.isNaN(humidityValue)) {
+              queryBuilder.andWhere('sd.value = :humidityValue', {
+                humidityValue,
+              });
+            }
+            break;
+          }
 
-      // Filter by specific value (takes precedence over value range)
-      if (value !== undefined) {
-        queryBuilder.andWhere('sd.value = :value', { value });
-      } else {
-        // Filter by value range (only if specific value is not provided)
-        if (startValue !== undefined) {
-          queryBuilder.andWhere('sd.value >= :startValue', { startValue });
-        }
+          case 'light': {
+            // Search by light value (lx)
+            queryBuilder.andWhere('sd.unit = :lightUnit', { lightUnit: 'lx' });
+            const lightValue = Number.parseFloat(searchValue);
+            if (!Number.isNaN(lightValue)) {
+              queryBuilder.andWhere('sd.value = :lightValue', { lightValue });
+            }
+            break;
+          }
 
-        if (endValue !== undefined) {
-          queryBuilder.andWhere('sd.value <= :endValue', { endValue });
+          case 'time':
+            // Flexible time search
+            this.applyTimeSearch(queryBuilder, searchValue);
+            break;
         }
       }
 
@@ -200,18 +211,176 @@ export class SensorDataService {
     }
   }
 
+  private isVietnameseDateFormat(value: string): boolean {
+    const patterns = [
+      /^(\d{4})$/, // yyyy
+      /^(\d{1,2})\/(\d{4})$/, // MM/yyyy
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/MM/yyyy
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2})$/, // dd/MM/yyyy HH
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{1,2})$/, // dd/MM/yyyy HH:mm
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{1,2}):(\d{1,2})$/, // dd/MM/yyyy HH:mm:ss
+    ];
+
+    return patterns.some((pattern) => pattern.test(value.trim()));
+  }
+
+  private applyTimeSearch(queryBuilder: any, timeValue: string) {
+    try {
+      // Remove any whitespace
+      const cleanTimeValue = timeValue.trim();
+
+      // Define patterns for Vietnamese date format (dd/MM/yyyy HH:mm:ss)
+      const patterns = {
+        year: /^(\d{4})$/, // yyyy
+        month: /^(\d{1,2})\/(\d{4})$/, // MM/yyyy
+        day: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/MM/yyyy
+        hour: /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2})$/, // dd/MM/yyyy HH
+        minute: /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{1,2})$/, // dd/MM/yyyy HH:mm
+        second:
+          /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{1,2}):(\d{1,2})$/, // dd/MM/yyyy HH:mm:ss
+      };
+
+      let startDate: Date | undefined;
+      let endDate: Date | undefined;
+
+      if (patterns.second.test(cleanTimeValue)) {
+        // Search by exact second - dd/MM/yyyy HH:mm:ss
+        const match = patterns.second.exec(cleanTimeValue);
+        if (match) {
+          const [, day, month, year, hour, minute, second] = match;
+          startDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            Number(minute),
+            Number(second),
+          );
+          endDate = new Date(startDate.getTime() + 999); // Add 999ms for same second
+        }
+      } else if (patterns.minute.test(cleanTimeValue)) {
+        // Search within the minute - dd/MM/yyyy HH:mm
+        const match = patterns.minute.exec(cleanTimeValue);
+        if (match) {
+          const [, day, month, year, hour, minute] = match;
+          startDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            Number(minute),
+            0,
+          );
+          endDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            Number(minute),
+            59,
+            999,
+          );
+        }
+      } else if (patterns.hour.test(cleanTimeValue)) {
+        // Search within the hour - dd/MM/yyyy HH
+        const match = patterns.hour.exec(cleanTimeValue);
+        if (match) {
+          const [, day, month, year, hour] = match;
+          startDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            0,
+            0,
+          );
+          endDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            59,
+            59,
+            999,
+          );
+        }
+      } else if (patterns.day.test(cleanTimeValue)) {
+        // Search within the day - dd/MM/yyyy
+        const match = patterns.day.exec(cleanTimeValue);
+        if (match) {
+          const [, day, month, year] = match;
+          startDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            0,
+            0,
+            0,
+          );
+          endDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            23,
+            59,
+            59,
+            999,
+          );
+        }
+      } else if (patterns.month.test(cleanTimeValue)) {
+        // Search within the month - MM/yyyy
+        const match = patterns.month.exec(cleanTimeValue);
+        if (match) {
+          const [, month, year] = match;
+          startDate = new Date(Number(year), Number(month) - 1, 1, 0, 0, 0);
+          // Get the last day of the month
+          const nextMonth = new Date(Number(year), Number(month), 1);
+          endDate = new Date(nextMonth.getTime() - 1);
+        }
+      } else if (patterns.year.test(cleanTimeValue)) {
+        // Search within the year - yyyy
+        const match = patterns.year.exec(cleanTimeValue);
+        if (match) {
+          const [, year] = match;
+          startDate = new Date(Number(year), 0, 1, 0, 0, 0);
+          endDate = new Date(Number(year), 11, 31, 23, 59, 59, 999);
+        }
+      } else {
+        // If format doesn't match Vietnamese format, don't search
+        console.warn(
+          'Invalid date format. Expected format: dd/MM/yyyy HH:mm:ss or shorter',
+        );
+        return;
+      }
+
+      // Apply date range filter
+      if (
+        startDate &&
+        endDate &&
+        !Number.isNaN(startDate.getTime()) &&
+        !Number.isNaN(endDate.getTime())
+      ) {
+        queryBuilder.andWhere(
+          'sd.timestamp >= :startTime AND sd.timestamp <= :endTime',
+          {
+            startTime: startDate,
+            endTime: endDate,
+          },
+        );
+      }
+    } catch (error) {
+      console.error('Error parsing time search:', error);
+      console.warn(
+        'Expected format: dd/MM/yyyy HH:mm:ss or shorter (e.g., 17/10/2025 10:13:56)',
+      );
+    }
+  }
+
   async downloadCsv(params?: SearchSensorDataDto) {
     try {
       const {
-        startDate,
-        endDate,
-        date,
-        unit,
-        startValue,
-        endValue,
-        value,
-        query,
-        sensorIds = [],
+        searchField,
+        searchValue,
         sortBy = 'timestamp',
         sortOrder = 'DESC',
       } = params ?? {};
@@ -220,81 +389,99 @@ export class SensorDataService {
         .createQueryBuilder('sd')
         .leftJoinAndSelect('sd.sensor', 'sensor');
 
-      // Filter by sensor IDs
-      if (sensorIds && sensorIds.length > 0) {
-        queryBuilder.andWhere('sd.sensor_id IN (:...sensorIds)', { sensorIds });
-      }
+      // Apply search logic based on searchField and searchValue (same as findSensorData)
+      if (searchValue && searchValue.trim() !== '') {
+        switch (searchField) {
+          case 'all':
+            // Search across all fields intelligently (include smart time search)
+            // Check if searchValue matches Vietnamese date format
+            if (this.isVietnameseDateFormat(searchValue)) {
+              // If it's a valid date format, search in time + other fields
+              const subQuery = this.sensorDataRepository
+                .createQueryBuilder('sd_sub')
+                .select('sd_sub.id');
 
-      // Filter by unit
-      if (unit) {
-        queryBuilder.andWhere('sd.unit = :unit', { unit });
-      }
+              this.applyTimeSearch(subQuery, searchValue);
 
-      // General search query
-      if (query) {
-        // Check if query is a date format (YYYY-MM-DD HH:mm:ss)
-        const datePattern = /^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/;
-        if (datePattern.test(query)) {
-          // Convert to date and search by timestamp
-          const queryDate = new Date(query);
-          if (!isNaN(queryDate.getTime())) {
-            // Search for records within the same minute
-            const startOfMinute = new Date(queryDate);
-            startOfMinute.setSeconds(0, 0);
-            const endOfMinute = new Date(queryDate);
-            endOfMinute.setSeconds(59, 999);
+              queryBuilder.andWhere(
+                '(CAST(sd.sensor_id AS TEXT) ILIKE :searchValue OR ' +
+                  'sensor.name ILIKE :searchValue OR ' +
+                  'CAST(sd.value AS TEXT) ILIKE :searchValue OR ' +
+                  'sd.unit ILIKE :searchValue OR ' +
+                  `sd.id IN (${subQuery.getQuery()}))`,
+                {
+                  searchValue: `%${searchValue}%`,
+                  ...subQuery.getParameters(),
+                },
+              );
+            } else {
+              // Regular search without time
+              queryBuilder.andWhere(
+                '(CAST(sd.sensor_id AS TEXT) ILIKE :searchValue OR ' +
+                  'sensor.name ILIKE :searchValue OR ' +
+                  'CAST(sd.value AS TEXT) ILIKE :searchValue OR ' +
+                  'sd.unit ILIKE :searchValue)',
+                { searchValue: `%${searchValue}%` },
+              );
+            }
+            break;
 
-            queryBuilder.andWhere(
-              'sd.timestamp >= :startOfMinute AND sd.timestamp <= :endOfMinute',
-              {
-                startOfMinute,
-                endOfMinute,
-              },
-            );
+          case 'id': {
+            // Search by sensor ID
+            const numericId = Number.parseInt(searchValue, 10);
+            if (!Number.isNaN(numericId)) {
+              queryBuilder.andWhere('sd.sensor_id = :sensorId', {
+                sensorId: numericId,
+              });
+            }
+            break;
           }
-        } else {
-          // Regular text search
-          queryBuilder.andWhere(
-            '(sensor.name ILIKE :query OR sd.unit ILIKE :query OR CAST(sd.value AS TEXT) ILIKE :query)',
-            { query: `%${query}%` },
-          );
-        }
-      }
 
-      // Filter by specific date (takes precedence over date range)
-      if (date) {
-        const specificDate = new Date(date);
-        const startOfDay = new Date(specificDate.setHours(0, 0, 0, 0));
-        const endOfDay = new Date(specificDate.setHours(23, 59, 59, 999));
+          case 'name':
+            // Search by sensor name
+            queryBuilder.andWhere('sensor.name ILIKE :name', {
+              name: `%${searchValue}%`,
+            });
+            break;
 
-        queryBuilder.andWhere('sd.timestamp >= :startOfDay', { startOfDay });
-        queryBuilder.andWhere('sd.timestamp <= :endOfDay', { endOfDay });
-      } else {
-        // Filter by date range (only if specific date is not provided)
-        if (startDate) {
-          queryBuilder.andWhere('sd.timestamp >= :startDate', {
-            startDate: new Date(startDate),
-          });
-        }
+          case 'temp': {
+            // Search by temperature value (°C)
+            queryBuilder.andWhere('sd.unit = :tempUnit', { tempUnit: '°C' });
+            const tempValue = Number.parseFloat(searchValue);
+            if (!Number.isNaN(tempValue)) {
+              queryBuilder.andWhere('sd.value = :tempValue', { tempValue });
+            }
+            break;
+          }
 
-        if (endDate) {
-          queryBuilder.andWhere('sd.timestamp <= :endDate', {
-            endDate: new Date(endDate),
-          });
-        }
-      }
+          case 'humidity': {
+            // Search by humidity value (%)
+            queryBuilder.andWhere('sd.unit = :humidityUnit', {
+              humidityUnit: '%',
+            });
+            const humidityValue = Number.parseFloat(searchValue);
+            if (!Number.isNaN(humidityValue)) {
+              queryBuilder.andWhere('sd.value = :humidityValue', {
+                humidityValue,
+              });
+            }
+            break;
+          }
 
-      // Filter by specific value (takes precedence over value range)
-      if (value !== undefined) {
-        queryBuilder.andWhere('sd.value = :value', { value });
-      } else {
-        // Filter by value range (only if specific value is not provided)
-        if (startValue !== undefined) {
-          queryBuilder.andWhere('sd.value >= :startValue', { startValue });
-        }
+          case 'light': {
+            // Search by light value (lx)
+            queryBuilder.andWhere('sd.unit = :lightUnit', { lightUnit: 'lx' });
+            const lightValue = Number.parseFloat(searchValue);
+            if (!Number.isNaN(lightValue)) {
+              queryBuilder.andWhere('sd.value = :lightValue', { lightValue });
+            }
+            break;
+          }
 
-        if (endValue !== undefined) {
-          queryBuilder.andWhere('sd.value <= :endValue', { endValue });
+          case 'time':
+            // Flexible time search
+            this.applyTimeSearch(queryBuilder, searchValue);
+            break;
         }
       }
 
@@ -336,17 +523,17 @@ export class SensorDataService {
       const csvRows: string[] = [];
       csvRows.push(headers.join(','));
 
-      sensorData.forEach((data) => {
+      for (const data of sensorData) {
         const row = [
           data.id,
           data.sensor_id,
-          `"${(data.sensor?.name || 'Unknown').replace(/"/g, '""')}"`,
+          `"${(data.sensor?.name || 'Unknown').replaceAll('"', '""')}"`,
           data.value,
           `"${data.unit}"`,
           data.timestamp.toISOString(),
         ];
         csvRows.push(row.join(','));
-      });
+      }
 
       const csvContent = csvRows.join('\n');
 

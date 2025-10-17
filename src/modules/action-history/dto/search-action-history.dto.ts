@@ -39,40 +39,13 @@ export class SearchActionHistoryDto {
   status?: string;
 
   @ApiProperty({
-    description: 'Search query for action name or description',
-    example: 'turn on',
+    description: 'Date to filter by in Vietnamese format (dd/MM/yyyy HH:mm:ss)',
+    example: '17/10/2025 10:13:56',
     required: false,
   })
   @IsOptional()
   @IsString()
-  queryName?: string; // This can be used to search by action name or description
-
-  @ApiProperty({
-    description: 'Start date timestamp (Unix timestamp)',
-    example: 1609459200000,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  startDate?: number;
-
-  @ApiProperty({
-    description: 'End date timestamp (Unix timestamp)',
-    example: 1609545600000,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  endDate?: number;
-
-  @ApiProperty({
-    description: 'Specific date to filter by (Unix timestamp)',
-    example: 1609459200000,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  date?: number;
+  date?: string;
 
   @ApiProperty({
     description: 'Field to sort by',
@@ -82,7 +55,7 @@ export class SearchActionHistoryDto {
   })
   @IsOptional()
   @IsString()
-  sortBy?: string = 'timestamp';
+  sortBy?: string;
 
   @ApiProperty({
     description: 'Sort order',
@@ -93,7 +66,7 @@ export class SearchActionHistoryDto {
   })
   @IsOptional()
   @IsString()
-  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+  sortOrder?: 'ASC' | 'DESC';
 
   @ApiProperty({
     description: 'Number of items per page',
@@ -104,7 +77,7 @@ export class SearchActionHistoryDto {
   @IsOptional()
   @IsNumber()
   @IsPositive()
-  size?: number = 10;
+  size?: number;
 
   @ApiProperty({
     description: 'Page number',
@@ -116,5 +89,5 @@ export class SearchActionHistoryDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
-  page?: number = 1;
+  page?: number;
 }

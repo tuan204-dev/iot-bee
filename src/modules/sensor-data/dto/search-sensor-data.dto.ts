@@ -1,6 +1,5 @@
 import {
   IsOptional,
-  IsArray,
   IsString,
   IsNumber,
   IsPositive,
@@ -10,86 +9,25 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class SearchSensorDataDto {
   @ApiProperty({
-    description: 'Array of sensor IDs to filter by',
-    example: [1, 2, 3],
-    required: false,
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  sensorIds?: number[];
-
-  @ApiProperty({
-    description: 'Unit of measurement to filter by',
-    example: 'celsius',
+    description:
+      'Field to search in. Options: all, id, name, temp, humidity, light, time',
+    example: 'all',
+    enum: ['all', 'id', 'name', 'temp', 'humidity', 'light', 'time'],
     required: false,
   })
   @IsOptional()
   @IsString()
-  unit?: string;
+  searchField?: string;
 
   @ApiProperty({
-    description: 'Start date timestamp (Unix timestamp)',
-    example: 1609459200000,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  startDate?: number;
-
-  @ApiProperty({
-    description: 'End date timestamp (Unix timestamp)',
-    example: 1609545600000,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  endDate?: number;
-
-  @ApiProperty({
-    description: 'Minimum value to filter by',
-    example: 20,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  startValue?: number;
-
-  @ApiProperty({
-    description: 'Maximum value to filter by',
-    example: 30,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  endValue?: number;
-
-  @ApiProperty({
-    description: 'Specific date to filter by (Unix timestamp)',
-    example: 1609459200000,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  date?: number;
-
-  @ApiProperty({
-    description: 'Specific value to filter by',
-    example: 25.5,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber()
-  value?: number;
-
-  @ApiProperty({
-    description: 'General search query for sensor name, unit, or value',
+    description:
+      'Value to search for. For time field, use flexible format (YYYY, YYYY-MM, YYYY-MM-DD, etc.)',
     example: 'temperature',
     required: false,
   })
   @IsOptional()
   @IsString()
-  query?: string;
+  searchValue?: string;
 
   @ApiProperty({
     description: 'Field to sort by',

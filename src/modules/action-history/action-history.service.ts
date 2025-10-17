@@ -89,36 +89,9 @@ export class ActionHistoryService {
       });
     }
 
-    // Search by action name (queryName)
-    if (body.queryName) {
-      query.andWhere('action.name ILIKE :queryName', {
-        queryName: `%${body.queryName}%`,
-      });
-    }
-
-    // Filter by specific date (takes precedence over date range)
+    // Filter by date - Vietnamese date format (dd/MM/yyyy HH:mm:ss)
     if (body.date) {
-      const specificDate = new Date(body.date);
-      const startOfDay = new Date(specificDate.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(specificDate.setHours(23, 59, 59, 999));
-
-      query.andWhere('actionHistory.timestamp >= :startOfDay', { startOfDay });
-      query.andWhere('actionHistory.timestamp <= :endOfDay', { endOfDay });
-    } else {
-      // Filter by date range (only if specific date is not provided)
-      if (body.startDate) {
-        const startDate = new Date(body.startDate);
-        query.andWhere('actionHistory.timestamp >= :startDate', {
-          startDate,
-        });
-      }
-
-      if (body.endDate) {
-        const endDate = new Date(body.endDate);
-        query.andWhere('actionHistory.timestamp <= :endDate', {
-          endDate,
-        });
-      }
+      this.applyTimeSearch(query, body.date);
     }
 
     // Dynamic ordering
@@ -183,40 +156,9 @@ export class ActionHistoryService {
           });
         }
 
-        // Search by action name (queryName)
-        if (params.queryName) {
-          queryBuilder.andWhere('action.name ILIKE :queryName', {
-            queryName: `%${params.queryName}%`,
-          });
-        }
-
-        // Filter by specific date (takes precedence over date range)
+        // Filter by date - Vietnamese date format (dd/MM/yyyy HH:mm:ss)
         if (params.date) {
-          const specificDate = new Date(params.date);
-          const startOfDay = new Date(specificDate.setHours(0, 0, 0, 0));
-          const endOfDay = new Date(specificDate.setHours(23, 59, 59, 999));
-
-          queryBuilder.andWhere('actionHistory.timestamp >= :startOfDay', {
-            startOfDay,
-          });
-          queryBuilder.andWhere('actionHistory.timestamp <= :endOfDay', {
-            endOfDay,
-          });
-        } else {
-          // Filter by date range (only if specific date is not provided)
-          if (params.startDate) {
-            const startDate = new Date(params.startDate);
-            queryBuilder.andWhere('actionHistory.timestamp >= :startDate', {
-              startDate,
-            });
-          }
-
-          if (params.endDate) {
-            const endDate = new Date(params.endDate);
-            queryBuilder.andWhere('actionHistory.timestamp <= :endDate', {
-              endDate,
-            });
-          }
+          this.applyTimeSearch(queryBuilder, params.date);
         }
 
         // Add sorting
@@ -289,6 +231,171 @@ export class ActionHistoryService {
         message: 'Error generating CSV file',
         data: null,
       };
+    }
+  }
+
+  private isVietnameseDateFormat(value: string): boolean {
+    const patterns = [
+      /^(\d{4})$/, // yyyy
+      /^(\d{1,2})\/(\d{4})$/, // MM/yyyy
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/MM/yyyy
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2})$/, // dd/MM/yyyy HH
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{1,2})$/, // dd/MM/yyyy HH:mm
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{1,2}):(\d{1,2})$/, // dd/MM/yyyy HH:mm:ss
+    ];
+
+    return patterns.some((pattern) => pattern.test(value.trim()));
+  }
+
+  private applyTimeSearch(queryBuilder: any, timeValue: string) {
+    try {
+      // Remove any whitespace
+      const cleanTimeValue = timeValue.trim();
+
+      // Define patterns for Vietnamese date format (dd/MM/yyyy HH:mm:ss)
+      const patterns = {
+        year: /^(\d{4})$/, // yyyy
+        month: /^(\d{1,2})\/(\d{4})$/, // MM/yyyy
+        day: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/MM/yyyy
+        hour: /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2})$/, // dd/MM/yyyy HH
+        minute: /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{1,2})$/, // dd/MM/yyyy HH:mm
+        second:
+          /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{1,2}):(\d{1,2})$/, // dd/MM/yyyy HH:mm:ss
+      };
+
+      let startDate: Date | undefined;
+      let endDate: Date | undefined;
+
+      if (patterns.second.test(cleanTimeValue)) {
+        // Search by exact second - dd/MM/yyyy HH:mm:ss
+        const match = patterns.second.exec(cleanTimeValue);
+        if (match) {
+          const [, day, month, year, hour, minute, second] = match;
+          startDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            Number(minute),
+            Number(second),
+          );
+          endDate = new Date(startDate.getTime() + 999); // Add 999ms for same second
+        }
+      } else if (patterns.minute.test(cleanTimeValue)) {
+        // Search within the minute - dd/MM/yyyy HH:mm
+        const match = patterns.minute.exec(cleanTimeValue);
+        if (match) {
+          const [, day, month, year, hour, minute] = match;
+          startDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            Number(minute),
+            0,
+          );
+          endDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            Number(minute),
+            59,
+            999,
+          );
+        }
+      } else if (patterns.hour.test(cleanTimeValue)) {
+        // Search within the hour - dd/MM/yyyy HH
+        const match = patterns.hour.exec(cleanTimeValue);
+        if (match) {
+          const [, day, month, year, hour] = match;
+          startDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            0,
+            0,
+          );
+          endDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            59,
+            59,
+            999,
+          );
+        }
+      } else if (patterns.day.test(cleanTimeValue)) {
+        // Search within the day - dd/MM/yyyy
+        const match = patterns.day.exec(cleanTimeValue);
+        if (match) {
+          const [, day, month, year] = match;
+          startDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            0,
+            0,
+            0,
+          );
+          endDate = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            23,
+            59,
+            59,
+            999,
+          );
+        }
+      } else if (patterns.month.test(cleanTimeValue)) {
+        // Search within the month - MM/yyyy
+        const match = patterns.month.exec(cleanTimeValue);
+        if (match) {
+          const [, month, year] = match;
+          startDate = new Date(Number(year), Number(month) - 1, 1, 0, 0, 0);
+          // Get the last day of the month
+          const nextMonth = new Date(Number(year), Number(month), 1);
+          endDate = new Date(nextMonth.getTime() - 1);
+        }
+      } else if (patterns.year.test(cleanTimeValue)) {
+        // Search within the year - yyyy
+        const match = patterns.year.exec(cleanTimeValue);
+        if (match) {
+          const [, year] = match;
+          startDate = new Date(Number(year), 0, 1, 0, 0, 0);
+          endDate = new Date(Number(year), 11, 31, 23, 59, 59, 999);
+        }
+      } else {
+        // If format doesn't match Vietnamese format, don't search
+        console.warn(
+          'Invalid date format. Expected format: dd/MM/yyyy HH:mm:ss or shorter',
+        );
+        return;
+      }
+
+      // Apply date range filter
+      if (
+        startDate &&
+        endDate &&
+        !Number.isNaN(startDate.getTime()) &&
+        !Number.isNaN(endDate.getTime())
+      ) {
+        queryBuilder.andWhere(
+          'actionHistory.timestamp >= :startTime AND actionHistory.timestamp <= :endTime',
+          {
+            startTime: startDate,
+            endTime: endDate,
+          },
+        );
+      }
+    } catch (error) {
+      console.error('Error parsing time search:', error);
+      console.warn(
+        'Expected format: dd/MM/yyyy HH:mm:ss or shorter (e.g., 17/10/2025 10:13:56)',
+      );
     }
   }
 
