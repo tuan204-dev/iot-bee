@@ -63,9 +63,12 @@ export class SensorDataService {
         size = 10,
         startDate,
         endDate,
+        date,
         unit,
         startValue,
         endValue,
+        value,
+        query,
         sensorIds = [],
         sortBy = 'timestamp',
         sortOrder = 'DESC',
@@ -85,26 +88,72 @@ export class SensorDataService {
         queryBuilder.andWhere('sd.unit = :unit', { unit });
       }
 
-      // Filter by date range
-      if (startDate) {
-        queryBuilder.andWhere('sd.timestamp >= :startDate', {
-          startDate: new Date(startDate),
-        });
+      // General search query
+      if (query) {
+        // Check if query is a date format (YYYY-MM-DD HH:mm:ss)
+        const datePattern = /^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/;
+        if (datePattern.test(query)) {
+          // Convert to date and search by timestamp
+          const queryDate = new Date(query);
+          if (!isNaN(queryDate.getTime())) {
+            // Search for records within the same minute
+            const startOfMinute = new Date(queryDate);
+            startOfMinute.setSeconds(0, 0);
+            const endOfMinute = new Date(queryDate);
+            endOfMinute.setSeconds(59, 999);
+
+            queryBuilder.andWhere(
+              'sd.timestamp >= :startOfMinute AND sd.timestamp <= :endOfMinute',
+              {
+                startOfMinute,
+                endOfMinute,
+              },
+            );
+          }
+        } else {
+          // Regular text search
+          queryBuilder.andWhere(
+            '(sensor.name ILIKE :query OR sd.unit ILIKE :query OR CAST(sd.value AS TEXT) ILIKE :query)',
+            { query: `%${query}%` },
+          );
+        }
       }
 
-      if (endDate) {
-        queryBuilder.andWhere('sd.timestamp <= :endDate', {
-          endDate: new Date(endDate),
-        });
+      // Filter by specific date (takes precedence over date range)
+      if (date) {
+        const specificDate = new Date(date);
+        const startOfDay = new Date(specificDate.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(specificDate.setHours(23, 59, 59, 999));
+
+        queryBuilder.andWhere('sd.timestamp >= :startOfDay', { startOfDay });
+        queryBuilder.andWhere('sd.timestamp <= :endOfDay', { endOfDay });
+      } else {
+        // Filter by date range (only if specific date is not provided)
+        if (startDate) {
+          queryBuilder.andWhere('sd.timestamp >= :startDate', {
+            startDate: new Date(startDate),
+          });
+        }
+
+        if (endDate) {
+          queryBuilder.andWhere('sd.timestamp <= :endDate', {
+            endDate: new Date(endDate),
+          });
+        }
       }
 
-      // Filter by value range
-      if (startValue !== undefined) {
-        queryBuilder.andWhere('sd.value >= :startValue', { startValue });
-      }
+      // Filter by specific value (takes precedence over value range)
+      if (value !== undefined) {
+        queryBuilder.andWhere('sd.value = :value', { value });
+      } else {
+        // Filter by value range (only if specific value is not provided)
+        if (startValue !== undefined) {
+          queryBuilder.andWhere('sd.value >= :startValue', { startValue });
+        }
 
-      if (endValue !== undefined) {
-        queryBuilder.andWhere('sd.value <= :endValue', { endValue });
+        if (endValue !== undefined) {
+          queryBuilder.andWhere('sd.value <= :endValue', { endValue });
+        }
       }
 
       // Add sorting
@@ -156,9 +205,12 @@ export class SensorDataService {
       const {
         startDate,
         endDate,
+        date,
         unit,
         startValue,
         endValue,
+        value,
+        query,
         sensorIds = [],
         sortBy = 'timestamp',
         sortOrder = 'DESC',
@@ -178,26 +230,72 @@ export class SensorDataService {
         queryBuilder.andWhere('sd.unit = :unit', { unit });
       }
 
-      // Filter by date range
-      if (startDate) {
-        queryBuilder.andWhere('sd.timestamp >= :startDate', {
-          startDate: new Date(startDate),
-        });
+      // General search query
+      if (query) {
+        // Check if query is a date format (YYYY-MM-DD HH:mm:ss)
+        const datePattern = /^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/;
+        if (datePattern.test(query)) {
+          // Convert to date and search by timestamp
+          const queryDate = new Date(query);
+          if (!isNaN(queryDate.getTime())) {
+            // Search for records within the same minute
+            const startOfMinute = new Date(queryDate);
+            startOfMinute.setSeconds(0, 0);
+            const endOfMinute = new Date(queryDate);
+            endOfMinute.setSeconds(59, 999);
+
+            queryBuilder.andWhere(
+              'sd.timestamp >= :startOfMinute AND sd.timestamp <= :endOfMinute',
+              {
+                startOfMinute,
+                endOfMinute,
+              },
+            );
+          }
+        } else {
+          // Regular text search
+          queryBuilder.andWhere(
+            '(sensor.name ILIKE :query OR sd.unit ILIKE :query OR CAST(sd.value AS TEXT) ILIKE :query)',
+            { query: `%${query}%` },
+          );
+        }
       }
 
-      if (endDate) {
-        queryBuilder.andWhere('sd.timestamp <= :endDate', {
-          endDate: new Date(endDate),
-        });
+      // Filter by specific date (takes precedence over date range)
+      if (date) {
+        const specificDate = new Date(date);
+        const startOfDay = new Date(specificDate.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(specificDate.setHours(23, 59, 59, 999));
+
+        queryBuilder.andWhere('sd.timestamp >= :startOfDay', { startOfDay });
+        queryBuilder.andWhere('sd.timestamp <= :endOfDay', { endOfDay });
+      } else {
+        // Filter by date range (only if specific date is not provided)
+        if (startDate) {
+          queryBuilder.andWhere('sd.timestamp >= :startDate', {
+            startDate: new Date(startDate),
+          });
+        }
+
+        if (endDate) {
+          queryBuilder.andWhere('sd.timestamp <= :endDate', {
+            endDate: new Date(endDate),
+          });
+        }
       }
 
-      // Filter by value range
-      if (startValue !== undefined) {
-        queryBuilder.andWhere('sd.value >= :startValue', { startValue });
-      }
+      // Filter by specific value (takes precedence over value range)
+      if (value !== undefined) {
+        queryBuilder.andWhere('sd.value = :value', { value });
+      } else {
+        // Filter by value range (only if specific value is not provided)
+        if (startValue !== undefined) {
+          queryBuilder.andWhere('sd.value >= :startValue', { startValue });
+        }
 
-      if (endValue !== undefined) {
-        queryBuilder.andWhere('sd.value <= :endValue', { endValue });
+        if (endValue !== undefined) {
+          queryBuilder.andWhere('sd.value <= :endValue', { endValue });
+        }
       }
 
       // Add sorting

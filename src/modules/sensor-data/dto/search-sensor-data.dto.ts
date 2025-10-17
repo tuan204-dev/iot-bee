@@ -65,6 +65,33 @@ export class SearchSensorDataDto {
   endValue?: number;
 
   @ApiProperty({
+    description: 'Specific date to filter by (Unix timestamp)',
+    example: 1609459200000,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  date?: number;
+
+  @ApiProperty({
+    description: 'Specific value to filter by',
+    example: 25.5,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  value?: number;
+
+  @ApiProperty({
+    description: 'General search query for sensor name, unit, or value',
+    example: 'temperature',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  query?: string;
+
+  @ApiProperty({
     description: 'Field to sort by',
     example: 'timestamp',
     default: 'timestamp',

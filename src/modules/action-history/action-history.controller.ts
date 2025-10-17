@@ -15,13 +15,13 @@ export class ActionHistoryController {
     return this.actionHistoryService.search(body);
   }
 
-  @Post('download-csv')
-  @ApiOperation({ summary: 'Download action history as CSV with filters' })
-  async downloadCsvWithParams(
+  @Post('/download-csv')
+  @ApiOperation({ summary: 'Download action history as CSV file' })
+  async downloadCsv(
     @Res() res: Response,
-    @Body() params: SearchActionHistoryDto,
+    @Body() body: SearchActionHistoryDto,
   ) {
-    const result = await this.actionHistoryService.downloadCsv(params);
+    const result = await this.actionHistoryService.downloadCsv(body);
 
     if (!result.success || !result.data) {
       return res.status(400).json({

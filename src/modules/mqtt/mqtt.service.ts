@@ -55,27 +55,18 @@ export class MqttService implements OnModuleInit {
     messageId: number | string,
   ): Promise<IAckPayload> {
     try {
-      console.log(
-        `Waiting for message on topic: ${topic} with messageId: ${messageId}`,
-      );
-
       await firstValueFrom(this.client.emit('subscribe', { topic }));
 
       const messageData = await firstValueFrom(
         this.messageSubject.pipe(
           filter((data) => {
             const message = data.message as { messageId?: number };
-            console.log(
-              `Checking message on topic: ${data.topic}, messageId: ${message?.messageId}`,
-            );
             return data.topic === topic && message?.messageId === messageId;
           }),
           take(1),
           timeout(timeoutMs),
         ),
       );
-
-      console.log('Received matching message:', messageData.message);
       return {
         messageId,
         isSuccess: true,
@@ -83,9 +74,6 @@ export class MqttService implements OnModuleInit {
       } as IAckPayload;
     } catch (error) {
       if (error instanceof TimeoutError) {
-        console.log(
-          `Timeout waiting for messageId ${messageId} on topic ${topic}`,
-        );
         return {
           messageId,
           isSuccess: false,

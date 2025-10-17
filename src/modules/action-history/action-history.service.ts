@@ -96,19 +96,29 @@ export class ActionHistoryService {
       });
     }
 
-    // Filter by date range
-    if (body.startDate) {
-      const startDate = new Date(body.startDate);
-      query.andWhere('actionHistory.timestamp >= :startDate', {
-        startDate,
-      });
-    }
+    // Filter by specific date (takes precedence over date range)
+    if (body.date) {
+      const specificDate = new Date(body.date);
+      const startOfDay = new Date(specificDate.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(specificDate.setHours(23, 59, 59, 999));
 
-    if (body.endDate) {
-      const endDate = new Date(body.endDate);
-      query.andWhere('actionHistory.timestamp <= :endDate', {
-        endDate,
-      });
+      query.andWhere('actionHistory.timestamp >= :startOfDay', { startOfDay });
+      query.andWhere('actionHistory.timestamp <= :endOfDay', { endOfDay });
+    } else {
+      // Filter by date range (only if specific date is not provided)
+      if (body.startDate) {
+        const startDate = new Date(body.startDate);
+        query.andWhere('actionHistory.timestamp >= :startDate', {
+          startDate,
+        });
+      }
+
+      if (body.endDate) {
+        const endDate = new Date(body.endDate);
+        query.andWhere('actionHistory.timestamp <= :endDate', {
+          endDate,
+        });
+      }
     }
 
     // Dynamic ordering
@@ -180,19 +190,33 @@ export class ActionHistoryService {
           });
         }
 
-        // Filter by date range
-        if (params.startDate) {
-          const startDate = new Date(params.startDate);
-          queryBuilder.andWhere('actionHistory.timestamp >= :startDate', {
-            startDate,
-          });
-        }
+        // Filter by specific date (takes precedence over date range)
+        if (params.date) {
+          const specificDate = new Date(params.date);
+          const startOfDay = new Date(specificDate.setHours(0, 0, 0, 0));
+          const endOfDay = new Date(specificDate.setHours(23, 59, 59, 999));
 
-        if (params.endDate) {
-          const endDate = new Date(params.endDate);
-          queryBuilder.andWhere('actionHistory.timestamp <= :endDate', {
-            endDate,
+          queryBuilder.andWhere('actionHistory.timestamp >= :startOfDay', {
+            startOfDay,
           });
+          queryBuilder.andWhere('actionHistory.timestamp <= :endOfDay', {
+            endOfDay,
+          });
+        } else {
+          // Filter by date range (only if specific date is not provided)
+          if (params.startDate) {
+            const startDate = new Date(params.startDate);
+            queryBuilder.andWhere('actionHistory.timestamp >= :startDate', {
+              startDate,
+            });
+          }
+
+          if (params.endDate) {
+            const endDate = new Date(params.endDate);
+            queryBuilder.andWhere('actionHistory.timestamp <= :endDate', {
+              endDate,
+            });
+          }
         }
 
         // Add sorting

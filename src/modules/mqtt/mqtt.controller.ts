@@ -24,13 +24,9 @@ export class MqttController {
   @EventPattern('realtime_data')
   async handleListenSensorData(
     @Payload() data: ISensorDataPayload,
-    @Ctx() context: MqttContext,
+    // @Ctx() context: MqttContext,
   ) {
     try {
-      console.log('Received data:', data);
-      console.log('Topic:', context.getTopic());
-      console.log(typeof data);
-
       if (
         isUndefined(data.temperature) ||
         isUndefined(data.humidity) ||
@@ -54,15 +50,13 @@ export class MqttController {
       this.realtimeGateway.broadcastTemperature(data.temperature);
       this.realtimeGateway.broadcastHumidity(data.humidity);
       this.realtimeGateway.broadcastLight(data.light);
-
-      console.log('✅ Data saved and broadcasted successfully');
     } catch (e) {
       console.error('Error processing message:', e);
     }
   }
 
-  // Subscribe to the 'device_status' topic
-  @EventPattern('device_status')
+  // Subscribe to the 'reconnect' topic
+  @EventPattern('reconnect')
   async handleListenDeviceStatus(@Payload() data: IDeviceStatusPayload) {
     try {
       if (data.isConnected) {
@@ -78,8 +72,6 @@ export class MqttController {
   handleGenericTopic(@Payload() data: unknown, @Ctx() context: MqttContext) {
     try {
       const topic = context.getTopic();
-      console.log(`Received message on topic: ${topic}`, data);
-
       // Forward all messages to service for potential listeners
       this.mqttService.handleIncomingMessage(topic, data);
     } catch (e) {

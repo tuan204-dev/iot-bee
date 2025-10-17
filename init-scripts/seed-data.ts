@@ -10,8 +10,6 @@ interface InitDataItem {
 }
 
 async function bootstrap() {
-  console.log('🚀 Starting data initialization...');
-
   try {
     // Create NestJS application
     const app = await NestFactory.create(AppModule);
@@ -39,7 +37,6 @@ async function bootstrap() {
       await seedTable(dataSource, tableData);
     }
 
-    console.log('✅ Data initialization completed successfully!');
     await app.close();
     process.exit(0);
   } catch (error) {
@@ -59,8 +56,6 @@ async function seedTable(dataSource: DataSource, tableData: InitDataItem) {
 }
 
 async function seedDevices(dataSource: DataSource, devicesData: any[]) {
-  console.log('📦 Seeding devices table...');
-
   for (const deviceData of devicesData) {
     // Check if device already exists
     const existingDevice = await dataSource.query(
@@ -74,15 +69,12 @@ async function seedDevices(dataSource: DataSource, devicesData: any[]) {
         'INSERT INTO devices (type, name) VALUES ($1, $2)',
         [deviceData.type, deviceData.name],
       );
-      console.log(`✅ Created device: ${deviceData.name} (${deviceData.type})`);
     } else {
       console.log(
         `ℹ️ Device already exists: ${deviceData.name} (${deviceData.type})`,
       );
     }
   }
-
-  console.log('✅ Devices seeding completed');
 }
 
 bootstrap();

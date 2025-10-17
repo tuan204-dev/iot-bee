@@ -27,7 +27,7 @@ import pgConfig from './config/db.conf';
         database: configService.get<string>('postgres.DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true, // Set to false in production
-        logging: true,
+        logging: false,
       }),
       inject: [ConfigService],
     }),

@@ -66,6 +66,15 @@ export class SearchActionHistoryDto {
   endDate?: number;
 
   @ApiProperty({
+    description: 'Specific date to filter by (Unix timestamp)',
+    example: 1609459200000,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  date?: number;
+
+  @ApiProperty({
     description: 'Field to sort by',
     example: 'timestamp',
     default: 'timestamp',
