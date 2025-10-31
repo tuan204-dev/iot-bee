@@ -43,9 +43,10 @@ async function bootstrap() {
 
   // Start cả HTTP server và microservices
   await app.startAllMicroservices();
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
 
-  console.log('🚀 HTTP Server running on port 3000');
+  console.log(`🚀 HTTP Server running on port ${port}`);
 }
 
 void bootstrap();

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res, Get } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ActionHistoryService } from './action-history.service';
@@ -39,5 +39,13 @@ export class ActionHistoryController {
     res.setHeader('Content-Length', Buffer.byteLength(result.data.content));
 
     return res.send(result.data.content);
+  }
+
+  @Get('/device-counts-today')
+  @ApiOperation({
+    summary: 'Get the count of on/off actions for each device today',
+  })
+  async getDeviceActionCountsToday() {
+    return this.actionHistoryService.getDeviceActionCountsToday();
   }
 }

@@ -411,4 +411,103 @@ export class ActionHistoryService {
 
     return sortMapping[sortBy] || 'actionHistory.timestamp';
   }
+
+  async getDeviceActionCountsToday() {
+    try {
+      // Get start and end of today
+      const today = new Date();
+      const startOfDay = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        0,
+        0,
+        0,
+        0,
+      );
+      const endOfDay = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
+
+      // Query to get counts by device and action state
+      const results = await this.actionHistoryRepository
+        .createQueryBuilder('actionHistory')
+        .leftJoinAndSelect('actionHistory.action', 'action')
+        .leftJoinAndSelect('actionHistory.actuator', 'actuator')
+        .leftJoinAndSelect('actuator.device', 'device')
+        .select('device.id', 'deviceId')
+        .addSelect('device.name', 'deviceName')
+        .addSelect('action.state', 'actionState')
+        .addSelect('COUNT(actionHistory.id)', 'count')
+        .where(
+          'actionHistory.timestamp >= :startOfDay AND actionHistory.timestamp <= :endOfDay',
+          {
+            startOfDay,
+            endOfDay,
+          },
+        )
+        .andWhere('actionHistory.status = :status', { status: 'success' })
+        .groupBy('device.id')
+        .addGroupBy('device.name')
+        .addGroupBy('action.state')
+        .orderBy('device.name', 'ASC')
+        .addOrderBy('action.state', 'ASC')
+        .getRawMany();
+
+      // Transform results to group by device
+      const deviceCounts = results.reduce(
+        (acc, row) => {
+          const deviceId = row.deviceId;
+          const deviceName = row.deviceName;
+          const actionState = row.actionState;
+          const count = Number.parseInt(row.count, 10);
+
+          if (!acc[deviceId]) {
+            acc[deviceId] = {
+              deviceId,
+              deviceName,
+              counts: {},
+              total: 0,
+            };
+          }
+
+          acc[deviceId].counts[actionState] = count;
+          acc[deviceId].total += count;
+
+          return acc;
+        },
+        {} as Record<
+          number,
+          {
+            deviceId: number;
+            deviceName: string;
+            counts: Record<string, number>;
+            total: number;
+          }
+        >,
+      );
+
+      return {
+        success: true,
+        message: 'Device action counts retrieved successfully',
+        data: {
+          date: today.toISOString().split('T')[0],
+          devices: Object.values(deviceCounts),
+        },
+      };
+    } catch (error) {
+      console.error('Error getting device action counts:', error);
+      return {
+        success: false,
+        message: 'Error retrieving device action counts',
+        data: null,
+      };
+    }
+  }
 }
