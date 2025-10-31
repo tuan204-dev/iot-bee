@@ -1,0 +1,324 @@
+{
+  "info": {
+    "_postman_id": "iot-bee-api-collection",
+    "name": "IoT Bee API Collection",
+    "description": "Complete API collection for IoT Bee project - a NestJS backend for IoT device management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "iot-bee-api"
+  },
+  "item": [
+    {
+      "name": "Device Management",
+      "item": [
+        {
+          "name": "Trigger Device Action",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actionId\": \"action123\",\n  \"actuatorId\": \"actuator456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/devices/trigger",
+              "host": ["{{base_url}}"],
+              "path": ["devices", "trigger"]
+            },
+            "description": "Trigger an action on a specific device using action ID and actuator ID"
+          }
+        },
+        {
+          "name": "Get Last Device Actions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/devices/last-actions",
+              "host": ["{{base_url}}"],
+              "path": ["devices", "last-actions"]
+            },
+            "description": "Get the last actions performed on all devices"
+          }
+        },
+        {
+          "name": "Ping ESP Device",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/devices/ping",
+              "host": ["{{base_url}}"],
+              "path": ["devices", "ping"]
+            },
+            "description": "Send ping command to ESP device to check connectivity"
+          }
+        }
+      ],
+      "description": "API endpoints for device management and control"
+    },
+    {
+      "name": "Sensors",
+      "item": [
+        {
+          "name": "Get All Sensors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/sensors",
+              "host": ["{{base_url}}"],
+              "path": ["sensors"]
+            },
+            "description": "Retrieve all registered sensors in the system"
+          }
+        }
+      ],
+      "description": "API endpoints for sensor management"
+    },
+    {
+      "name": "Sensor Data",
+      "item": [
+        {
+          "name": "Search Sensor Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"searchField\": \"all\",\n  \"searchValue\": \"temperature\",\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\",\n  \"size\": 10,\n  \"page\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sensor-data/search",
+              "host": ["{{base_url}}"],
+              "path": ["sensor-data", "search"]
+            },
+            "description": "Search sensor data with various filters and pagination"
+          }
+        },
+        {
+          "name": "Search Sensor Data - By Temperature",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"searchField\": \"temp\",\n  \"searchValue\": \"25\",\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\",\n  \"size\": 20,\n  \"page\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sensor-data/search",
+              "host": ["{{base_url}}"],
+              "path": ["sensor-data", "search"]
+            },
+            "description": "Search sensor data by temperature value"
+          }
+        },
+        {
+          "name": "Search Sensor Data - By Date",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"searchField\": \"time\",\n  \"searchValue\": \"2025-10\",\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\",\n  \"size\": 50,\n  \"page\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sensor-data/search",
+              "host": ["{{base_url}}"],
+              "path": ["sensor-data", "search"]
+            },
+            "description": "Search sensor data by time period (flexible format: YYYY, YYYY-MM, YYYY-MM-DD)"
+          }
+        },
+        {
+          "name": "Download Sensor Data CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"searchField\": \"all\",\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\",\n  \"size\": 1000,\n  \"page\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sensor-data/download-csv",
+              "host": ["{{base_url}}"],
+              "path": ["sensor-data", "download-csv"]
+            },
+            "description": "Download sensor data as CSV file with same search filters"
+          }
+        },
+        {
+          "name": "Get Recent Sensor Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/sensor-data/recent",
+              "host": ["{{base_url}}"],
+              "path": ["sensor-data", "recent"]
+            },
+            "description": "Get recent sensor data with default duration"
+          }
+        }
+      ],
+      "description": "API endpoints for sensor data management and analysis"
+    },
+    {
+      "name": "Actions",
+      "item": [
+        {
+          "name": "Get All Actions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/actions",
+              "host": ["{{base_url}}"],
+              "path": ["actions"]
+            },
+            "description": "Retrieve all available actions in the system"
+          }
+        }
+      ],
+      "description": "API endpoints for action management"
+    },
+    {
+      "name": "Action History",
+      "item": [
+        {
+          "name": "Search Action History",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actuatorIds\": [\"actuator1\", \"actuator2\"],\n  \"actionIds\": [\"action1\", \"action2\"],\n  \"status\": \"success\",\n  \"date\": \"17/10/2025 10:13:56\",\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\",\n  \"size\": 10,\n  \"page\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/action-histories/search",
+              "host": ["{{base_url}}"],
+              "path": ["action-histories", "search"]
+            },
+            "description": "Search action history with various filters"
+          }
+        },
+        {
+          "name": "Search Action History - By Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"success\",\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\",\n  \"size\": 20,\n  \"page\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/action-histories/search",
+              "host": ["{{base_url}}"],
+              "path": ["action-histories", "search"]
+            },
+            "description": "Search action history by status only"
+          }
+        },
+        {
+          "name": "Download Action History CSV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sortBy\": \"timestamp\",\n  \"sortOrder\": \"DESC\",\n  \"size\": 1000,\n  \"page\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/action-histories/download-csv",
+              "host": ["{{base_url}}"],
+              "path": ["action-histories", "download-csv"]
+            },
+            "description": "Download action history as CSV file"
+          }
+        }
+      ],
+      "description": "API endpoints for action history management and analysis"
+    },
+    {
+      "name": "Actuators",
+      "item": [
+        {
+          "name": "Get All Actuators",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/actuators",
+              "host": ["{{base_url}}"],
+              "path": ["actuators"]
+            },
+            "description": "Retrieve all registered actuators in the system"
+          }
+        }
+      ],
+      "description": "API endpoints for actuator management"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "description": "Base URL for the IoT Bee API server"
+    }
+  ]
+}
